@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Những Kiến Trúc Sư Trẻ - Khám Phá Hình Học Không Gian</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: '#1e3a8a', 
+                        teal: '#14b8a6', 
+                        orange: '#f97316',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom Animations & Styles */
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .fade-in { animation: fadeIn 0.4s ease-in-out forwards; }
+        .slide-up { animation: slideUp 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .hidden-view { display: none !important; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .btn {
+            padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-weight: 700; font-size: 1rem;
+            transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+            cursor: pointer; border: none;
+        }
+        .btn:active { transform: scale(0.95); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-orange { background-color: #f97316; color: white; }
+        .btn-orange:hover:not(:disabled) { background-color: #ea580c; }
+        .btn-teal { background-color: #14b8a6; color: white; }
+        .btn-teal:hover:not(:disabled) { background-color: #0d9488; }
+        .btn-outline { background-color: white; border: 2px solid #1e3a8a; color: #1e3a8a; }
+        .btn-outline:hover:not(:disabled) { background-color: #f1f5f9; }
+        .btn-danger { background-color: #ef4444; color: white; }
+        .btn-danger:hover:not(:disabled) { background-color: #dc2626; }
+    </style>
+</head>
+<body class="text-gray-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-navy text-white py-4 px-6 shadow-lg z-10 relative">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="location.reload()">
+                <div class="bg-orange p-2 rounded-lg shadow-inner">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5"></path></svg>
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-orange to-yellow-300 uppercase">Những Kiến Trúc Sư Trẻ</h1>
+                    <p class="text-xs md:text-sm text-teal font-medium">Khám phá Hình học không gian</p>
+                </div>
+            </div>
+            <button id="btn-change-role" class="hidden-view text-sm bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg transition-colors" onclick="location.reload()">
+                Thoát / Đổi vai trò
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 w-full max-w-7xl mx-auto p-4 md:p-6 flex flex-col relative">
+        
+        <!-- Loading Screen -->
+        <div id="loading-view" class="flex-1 flex flex-col items-center justify-center fade-in">
+            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-orange mb-4"></div>
+            <p class="text-xl font-semibold text-navy animate-pulse" id="loading-text">Đang khởi tạo hệ thống thời gian thực...</p>
+        </div>
+
+        <!-- Role Selection -->
+        <div id="role-view" class="hidden-view flex-1 items-center justify-center fade-in">
+            <div class="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 max-w-2xl w-full text-center slide-up">
+                <h2 class="text-3xl font-bold text-navy mb-2">Bạn là ai?</h2>
+                <p class="text-gray-500 mb-8">Vui lòng chọn vai trò để tham gia lớp học</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <button onclick="startAsTeacher()" class="group flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border-4 border-transparent bg-blue-50 hover:bg-blue-100 hover:border-navy transition-all duration-300">
+                        <div class="bg-navy p-4 rounded-full group-hover:scale-110 transition-transform duration-300">
+                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                        </div>
+                        <span class="text-2xl font-bold text-navy">Giáo Viên</span>
+                    </button>
+
+                    <button onclick="startAsStudent()" class="group flex flex-col items-center justify-center gap-4 p-8 rounded-2xl border-4 border-transparent bg-teal/10 hover:bg-teal/20 hover:border-teal transition-all duration-300">
+                        <div class="bg-teal p-4 rounded-full group-hover:scale-110 transition-transform duration-300">
+                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                        </div>
+                        <span class="text-2xl font-bold text-teal">Học Sinh</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= TEACHER VIEW ================= -->
+        <div id="teacher-view" class="hidden-view flex-col gap-6 fade-in h-full">
+            <!-- Top Bar -->
+            <div class="bg-white rounded-2xl shadow-sm p-4 flex flex-col md:flex-row justify-between items-center border border-gray-100 gap-4">
+                <div class="flex items-center gap-6">
+                    <div class="bg-navy text-white px-6 py-3 rounded-xl text-center">
+                        <div class="text-xs uppercase font-bold tracking-wider opacity-80 mb-1">Mã Phòng</div>
+                        <div id="t-room-code" class="text-4xl font-black tracking-widest">----</div>
+                    </div>
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Học sinh quét mã QR hoặc nhập mã để tham gia.</p>
+                        <div class="flex gap-4 mt-2">
+                            <div class="flex items-center gap-2 text-teal font-bold text-lg">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                <span id="t-count-students">0</span> Học sinh
+                            </div>
+                            <div class="flex items-center gap-2 text-orange font-bold text-lg">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span id="t-count-answers">0</span> Đã gửi
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-outline border-red-500 text-red-500 hover:bg-red-50" onclick="endSession()">Kết thúc lớp học</button>
+            </div>
+
+            <!-- Content Area -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
+                
+                <!-- Question Column -->
+                <div class="lg:col-span-2 flex flex-col gap-4">
+                    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 flex-1 flex flex-col relative">
+                        <div class="flex justify-between items-center border-b pb-4 mb-4">
+                            <div>
+                                <span class="px-3 py-1 bg-orange/10 text-orange font-bold rounded-lg text-sm mb-1 inline-block" id="t-q-title">CÂU 1</span>
+                                <h3 class="text-xl font-bold text-navy">Tiến trình bài giảng</h3>
+                            </div>
+                            <div class="flex gap-2" id="t-nav-buttons">
+                                <!-- Navigation buttons will be rendered here via JS -->
+                            </div>
+                        </div>
+                        
+                        <h4 class="text-2xl font-bold text-gray-800 leading-relaxed mb-6" id="t-q-text">Đang tải câu hỏi...</h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-auto mb-6" id="t-options-container">
+                            <!-- Options -->
+                        </div>
+
+                        <!-- Conclusion Box (Hidden by default) -->
+                        <div id="t-conclusion-box" class="hidden-view bg-blue-50 border-l-4 border-navy p-4 rounded-r-xl mt-4 slide-up">
+                            <h5 class="font-bold text-navy mb-1 flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                CHỐT KIẾN THỨC
+                            </h5>
+                            <p class="text-lg font-medium text-gray-800" id="t-conclusion-text"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats & Controls Column -->
+                <div class="flex flex-col gap-4">
+                    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 flex-1 flex flex-col">
+                        <h3 class="text-lg font-bold text-navy border-b pb-3 mb-4">Thống kê & Điều khiển</h3>
+                        
+                        <!-- Chart -->
+                        <div class="space-y-4 mb-6 flex-1" id="t-chart-container">
+                            <!-- Bars -->
+                        </div>
+
+                        <!-- Comments Toggle -->
+                        <div class="mb-4">
+                            <label class="flex items-center gap-2 cursor-pointer p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
+                                <input type="checkbox" id="t-toggle-comments" class="w-5 h-5 text-teal rounded focus:ring-teal" onchange="toggleCommentsVisibility()">
+                                <span class="font-medium text-gray-700">Hiển thị nhận xét của học sinh</span>
+                            </label>
+                        </div>
+
+                        <!-- Action Buttons based on phase -->
+                        <div class="border-t pt-4 space-y-3" id="t-action-buttons">
+                            <!-- Dynamically injected -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comments Area (Hidden by default) -->
+            <div id="t-comments-section" class="hidden-view bg-white rounded-2xl shadow-xl border border-gray-100 p-6 slide-up">
+                <h3 class="text-xl font-bold text-navy mb-4 flex items-center gap-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path></svg>
+                    Góc nhìn của Kiến trúc sư trẻ (Nhận xét)
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="t-comments-container">
+                    <!-- Comments -->
+                </div>
+            </div>
+        </div>
+
+
+        <!-- ================= STUDENT VIEW ================= -->
+        <div id="student-view" class="hidden-view flex-col gap-4 fade-in h-full items-center justify-center">
+            
+            <!-- Join Form -->
+            <div id="s-join-form" class="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 max-w-md w-full slide-up">
+                <div class="text-center mb-6">
+                    <div class="w-20 h-20 mx-auto bg-teal/20 text-teal rounded-full flex items-center justify-center mb-4">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-navy">Vào Lớp Học</h2>
+                    <p class="text-gray-500 mt-2">Nhập mã phòng và tên để bắt đầu.</p>
+                </div>
+                
+                <div class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Mã Phòng</label>
+                        <input type="text" id="s-input-code" maxlength="4" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal focus:ring-4 outline-none text-2xl font-bold text-center tracking-[0.5em] transition-all uppercase" placeholder="----">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Họ và Tên</label>
+                        <input type="text" id="s-input-name" class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal focus:ring-4 outline-none text-lg font-medium transition-all" placeholder="Tên của em...">
+                    </div>
+                    <div id="s-join-error" class="hidden-view text-red-500 text-sm font-medium text-center bg-red-50 p-2 rounded-lg"></div>
+                    <button class="btn btn-teal w-full py-4 text-lg mt-2" onclick="studentJoinSession()" id="btn-s-join">Vào Phòng Ngay</button>
+                </div>
+            </div>
+
+            <!-- Active Question / Result Screen -->
+            <div id="s-active-area" class="hidden-view flex-col w-full max-w-2xl h-full slide-up">
+                <!-- Student Header -->
+                <div class="bg-white rounded-xl shadow-sm p-4 flex justify-between items-center border border-gray-200 mb-4">
+                    <div>
+                        <p class="text-xs text-gray-500 font-bold uppercase">Học sinh</p>
+                        <p class="text-lg font-bold text-teal" id="s-display-name">---</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-gray-500 font-bold uppercase">Mã Phòng</p>
+                        <p class="text-lg font-black text-navy" id="s-display-code">----</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 flex-1 flex flex-col relative overflow-hidden">
+                    
+                    <!-- Overlay: Waiting for teacher -->
+                    <div id="s-overlay-waiting" class="hidden-view absolute inset-0 bg-white/95 z-30 flex flex-col items-center justify-center p-6 text-center">
+                        <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-teal mb-4"></div>
+                        <h3 class="text-2xl font-bold text-navy mb-2">Đang chờ giáo viên...</h3>
+                        <p class="text-gray-500">Giáo viên đang chuẩn bị mở câu hỏi tiếp theo.</p>
+                    </div>
+
+                    <!-- Overlay: Answer Recorded -->
+                    <div id="s-overlay-recorded" class="hidden-view absolute inset-0 bg-white/95 z-20 flex flex-col items-center justify-center p-6 text-center">
+                        <div class="w-24 h-24 bg-green-100 text-green-500 rounded-full flex items-center justify-center mb-6">
+                            <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
+                        </div>
+                        <h3 class="text-2xl font-black text-gray-800 mb-2">Đã ghi nhận!</h3>
+                        <p class="text-gray-500 font-medium">Lựa chọn của bạn: <span class="font-black text-2xl text-teal" id="s-recorded-choice">A</span></p>
+                        <p class="text-sm text-gray-400 mt-8 animate-pulse">Đang chờ giáo viên công bố đáp án...</p>
+                    </div>
+
+                    <!-- Overlay: Revealed Result -->
+                    <div id="s-overlay-result" class="hidden-view absolute inset-0 bg-white z-40 flex flex-col items-center justify-center p-6 text-center">
+                        <div id="s-result-icon-correct" class="hidden-view w-32 h-32 bg-green-500 text-white rounded-full flex items-center justify-center mb-6 shadow-xl transform scale-110">
+                            <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>
+                        </div>
+                        <div id="s-result-icon-wrong" class="hidden-view w-32 h-32 bg-red-500 text-white rounded-full flex items-center justify-center mb-6 shadow-xl">
+                            <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </div>
+                        
+                        <h3 class="text-3xl font-black mb-2" id="s-result-title">Kết quả</h3>
+                        <p class="text-gray-600 text-lg mb-2" id="s-result-subtitle">...</p>
+                        
+                        <div id="s-result-correct-box" class="hidden-view mt-4 bg-green-50 p-4 rounded-xl border border-green-200 w-full max-w-xs">
+                            <p class="text-gray-800 font-medium">Đáp án đúng là:</p>
+                            <p class="font-black text-green-600 text-3xl" id="s-result-correct-char">A</p>
+                        </div>
+                        
+                        <div id="s-result-conclusion" class="mt-8 bg-blue-50 p-4 rounded-xl text-left border-l-4 border-navy w-full hidden-view slide-up">
+                            <p class="font-bold text-navy text-sm mb-1">CHỐT KIẾN THỨC:</p>
+                            <p class="text-gray-800 font-medium" id="s-result-conclusion-text"></p>
+                        </div>
+                    </div>
+
+                    <!-- Question UI -->
+                    <div class="flex flex-col flex-1 h-full" id="s-question-ui">
+                        <div class="mb-6">
+                            <span class="inline-block px-3 py-1 bg-orange/10 text-orange font-bold rounded-lg text-sm mb-2" id="s-q-title">CÂU 1</span>
+                            <h3 class="text-xl md:text-2xl font-bold text-gray-800" id="s-q-text">Nội dung câu hỏi...</h3>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 gap-3 mb-6" id="s-options-container">
+                            <!-- Options injected here -->
+                        </div>
+
+                        <div class="mt-auto">
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Nhận xét của em (Tùy chọn)</label>
+                            <textarea id="s-input-comment" rows="2" class="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-teal outline-none mb-4 resize-none" placeholder="Ghi chú nhanh ý tưởng của em..."></textarea>
+                            <button class="btn btn-orange w-full py-4 text-lg shadow-lg" onclick="studentSubmitAnswer()" id="btn-s-submit" disabled>
+                                CHỌN ĐÁP ÁN ĐỂ GỬI
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- FIREBASE MODULES -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, updateDoc, collection, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- DATA ---
+        const QUESTIONS = [
+            {
+                id: 1, title: "CÂU 1 – KHÁM PHÁ ĐƯỜNG THẲNG",
+                text: "Sau khi thực hành với que tre, qua hai điểm phân biệt A, B có bao nhiêu đường thẳng?",
+                options: { A: "Không có đường thẳng nào.", B: "Có đúng một đường thẳng.", C: "Có đúng hai đường thẳng.", D: "Có vô số đường thẳng." },
+                correct: "B",
+                conclusion: "Có một và chỉ một đường thẳng đi qua hai điểm phân biệt."
+            },
+            {
+                id: 2, title: "CÂU 2 – KHÁM PHÁ MẶT PHẲNG",
+                text: "Ba điểm A, B, C cần thỏa mãn điều kiện nào để xác định duy nhất một mặt phẳng?",
+                options: { A: "Ba điểm thẳng hàng.", B: "Ba điểm bất kỳ.", C: "Ba điểm không thẳng hàng.", D: "Ba điểm cùng thuộc một đoạn thẳng." },
+                correct: "C",
+                conclusion: "Có một và chỉ một mặt phẳng đi qua ba điểm không thẳng hàng."
+            },
+            {
+                id: 3, title: "CÂU 3 – KHÁM PHÁ KHÔNG GIAN",
+                text: "Quan sát mô hình tứ diện ABCD. Nhận xét nào sau đây đúng?",
+                options: { A: "Bốn đỉnh cùng thuộc một đường thẳng.", B: "Bốn đỉnh cùng thuộc một mặt phẳng.", C: "Bốn đỉnh không cùng thuộc một mặt phẳng.", D: "Mọi bộ bốn điểm trong không gian đều không đồng phẳng." },
+                correct: "C",
+                conclusion: "Tồn tại bốn điểm không cùng thuộc một mặt phẳng (không đồng phẳng)."
+            },
+            {
+                id: 4, title: "CÂU 4 – KHÁM PHÁ QUAN HỆ THUỘC",
+                text: "Cho hai điểm phân biệt A, B cùng thuộc mặt phẳng (P). Kết luận nào chắc chắn đúng?",
+                options: { A: "Đường thẳng AB nằm trong mặt phẳng (P).", B: "Đường thẳng AB chỉ có hai điểm chung với mặt phẳng (P).", C: "Đường thẳng AB cắt mặt phẳng (P) tại đúng một điểm.", D: "Đường thẳng AB không nằm trong mặt phẳng (P)." },
+                correct: "A",
+                conclusion: "Nếu một đường thẳng có hai điểm phân biệt thuộc một mặt phẳng thì tất cả các điểm của đường thẳng đều thuộc mặt phẳng đó."
+            }
+        ];
+
+        // --- GLOBAL STATE ---
+        let db, auth, appId, userId;
+        let currentRole = null; // 'teacher' or 'student'
+        let currentSession = null;
+        let participants = [];
+        let allAnswers = [];
+        let studentName = "";
+        let studentSelectedOption = null;
+
+        // UI Helpers
+        const show = (id) => document.getElementById(id).classList.remove('hidden-view');
+        const hide = (id) => document.getElementById(id).classList.add('hidden-view');
+        const getEl = (id) => document.getElementById(id);
+
+        // --- INITIALIZATION ---
+        async function initApp() {
+            try {
+                appId = typeof __app_id !== 'undefined' ? __app_id : 'toan11-khong-gian-v2';
+                const configStr = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
+                const firebaseConfig = JSON.parse(configStr);
+                
+                if (Object.keys(firebaseConfig).length === 0) {
+                    throw new Error("Missing Firebase Config. Lớp học cần cấu hình CSDL để chạy nhiều thiết bị.");
+                }
+
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                const initialToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                if (initialToken) await signInWithCustomToken(auth, initialToken);
+                else await signInAnonymously(auth);
+
+                userId = auth.currentUser.uid;
+                
+                hide('loading-view');
+                show('role-view');
+            } catch (error) {
+                console.error(error);
+                getEl('loading-text').innerText = "Lỗi kết nối CSDL. " + error.message;
+                getEl('loading-text').classList.add("text-red-500");
+                getEl('loading-text').classList.remove("text-navy", "animate-pulse");
+            }
+        }
+
+        // Make functions globally available for inline onclick handlers
+        window.startAsTeacher = async () => {
+            currentRole = 'teacher';
+            hide('role-view');
+            show('loading-view');
+            getEl('loading-text').innerText = "Đang tạo phòng học...";
+            show('btn-change-role');
+
+            try {
+                // Generate a 4-digit code
+                const code = Math.floor(1000 + Math.random() * 9000).toString();
+                const sessionRef = doc(db, 'artifacts', appId, 'public', 'data', 'sessions', code);
+                
+                await setDoc(sessionRef, {
+                    teacherId: userId,
+                    status: 'active',
+                    phase: 'answering', // answering, locked, revealed, concluded
+                    currentQuestionIndex: 0,
+                    createdAt: Date.now()
+                });
+                
+                currentSession = { id: code, phase: 'answering', currentQuestionIndex: 0 };
+                setupTeacherListeners(code);
+                
+                hide('loading-view');
+                show('teacher-view');
+                renderTeacherUI();
+            } catch (e) {
+                console.error(e);
+                alert("Lỗi tạo phòng.");
+                location.reload();
+            }
+        };
+
+        window.startAsStudent = () => {
+            currentRole = 'student';
+            hide('role-view');
+            show('student-view');
+            show('s-join-form');
+            show('btn-change-role');
+        };
+
+        window.studentJoinSession = () => {
+            const code = getEl('s-input-code').value.toUpperCase();
+            const name = getEl('s-input-name').value.trim();
+            const errEl = getEl('s-join-error');
+            
+            if (code.length !== 4 || !name) {
+                errEl.innerText = "Vui lòng nhập mã phòng 4 chữ số và tên của bạn.";
+                show('s-join-error');
+                return;
+            }
+            hide('s-join-error');
+            getEl('btn-s-join').innerText = "Đang vào...";
+            getEl('btn-s-join').disabled = true;
+
+            // We must verify session exists. We listen to the whole collection and filter.
+            const sessionsRef = collection(db, 'artifacts', appId, 'public', 'data', 'sessions');
+            
+            // Single fetch workaround using onSnapshot
+            const unsub = onSnapshot(sessionsRef, async (snap) => {
+                const sessions = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                const room = sessions.find(s => s.id === code && s.status === 'active');
+                
+                unsub(); // Stop listening immediately
+
+                if (room) {
+                    currentSession = room;
+                    studentName = name;
+                    
+                    // Add to participants
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'participants'), {
+                        sessionId: code, name: name, joinedAt: Date.now()
+                    });
+
+                    setupStudentListeners(code);
+                    
+                    hide('s-join-form');
+                    show('s-active-area');
+                    getEl('s-display-name').innerText = name;
+                    getEl('s-display-code').innerText = code;
+                    renderStudentUI();
+                } else {
+                    errEl.innerText = "Không tìm thấy phòng hoặc phòng đã đóng.";
+                    show('s-join-error');
+                    getEl('btn-s-join').innerText = "Vào Phòng Ngay";
+                    getEl('btn-s-join').disabled = false;
+                }
+            });
+        };
+
+        // --- LISTENERS ---
+        function setupTeacherListeners(code) {
+            const sessRef = collection(db, 'artifacts', appId, 'public', 'data', 'sessions');
+            onSnapshot(sessRef, snap => {
+                const sessions = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                const me = sessions.find(s => s.id === code);
+                if (me) {
+                    currentSession = me;
+                    renderTeacherUI();
+                }
+            }, e => console.error(e));
+
+            const partRef = collection(db, 'artifacts', appId, 'public', 'data', 'participants');
+            onSnapshot(partRef, snap => {
+                const all = snap.docs.map(d => d.data());
+                participants = all.filter(p => p.sessionId === code);
+                getEl('t-count-students').innerText = participants.length;
+            }, e => console.error(e));
+
+            const ansRef = collection(db, 'artifacts', appId, 'public', 'data', 'answers');
+            onSnapshot(ansRef, snap => {
+                const all = snap.docs.map(d => d.data());
+                allAnswers = all.filter(a => a.sessionId === code);
+                renderTeacherUI(); // Re-render charts
+            }, e => console.error(e));
+        }
+
+        function setupStudentListeners(code) {
+            const sessRef = collection(db, 'artifacts', appId, 'public', 'data', 'sessions');
+            onSnapshot(sessRef, snap => {
+                const sessions = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                const me = sessions.find(s => s.id === code);
+                if (me) {
+                    // Check if question changed, reset selection
+                    if (currentSession && currentSession.currentQuestionIndex !== me.currentQuestionIndex) {
+                        studentSelectedOption = null;
+                        getEl('s-input-comment').value = '';
+                    }
+                    currentSession = me;
+                    renderStudentUI();
+                } else {
+                    alert("Phiên học đã kết thúc.");
+                    location.reload();
+                }
+            }, e => console.error(e));
+
+            const ansRef = collection(db, 'artifacts', appId, 'public', 'data', 'answers');
+            onSnapshot(ansRef, snap => {
+                const all = snap.docs.map(d => d.data());
+                allAnswers = all.filter(a => a.sessionId === code && a.studentName === studentName);
+                renderStudentUI();
+            }, e => console.error(e));
+        }
+
+        // --- TEACHER ACTIONS ---
+        window.updateSessionPhase = async (newPhase) => {
+            const ref = doc(db, 'artifacts', appId, 'public', 'data', 'sessions', currentSession.id);
+            await updateDoc(ref, { phase: newPhase });
+        };
+
+        window.nextQuestionT = async () => {
+            if (currentSession.currentQuestionIndex >= QUESTIONS.length - 1) return;
+            const ref = doc(db, 'artifacts', appId, 'public', 'data', 'sessions', currentSession.id);
+            await updateDoc(ref, { 
+                currentQuestionIndex: currentSession.currentQuestionIndex + 1,
+                phase: 'answering'
+            });
+        };
+
+        window.endSession = async () => {
+            if(confirm("Xác nhận kết thúc lớp học?")) {
+                const ref = doc(db, 'artifacts', appId, 'public', 'data', 'sessions', currentSession.id);
+                await updateDoc(ref, { status: 'ended' });
+                location.reload();
+            }
+        };
+
+        window.toggleCommentsVisibility = () => {
+            const checked = getEl('t-toggle-comments').checked;
+            if (checked) show('t-comments-section');
+            else hide('t-comments-section');
+        };
+
+        // --- RENDER TEACHER UI ---
+        function renderTeacherUI() {
+            if (!currentSession) return;
+            const qIndex = currentSession.currentQuestionIndex;
+            const q = QUESTIONS[qIndex];
+            const phase = currentSession.phase;
+            
+            // Header
+            getEl('t-room-code').innerText = currentSession.id;
+            
+            const currentAnswers = allAnswers.filter(a => a.questionIndex === qIndex);
+            getEl('t-count-answers').innerText = currentAnswers.length;
+
+            // Question Text
+            getEl('t-q-title').innerText = q.title;
+            getEl('t-q-text').innerText = q.text;
+
+            // Options
+            const optContainer = getEl('t-options-container');
+            optContainer.innerHTML = '';
+            ['A', 'B', 'C', 'D'].forEach(key => {
+                const isCorrect = (key === q.correct);
+                const highlightCorrect = (phase === 'revealed' || phase === 'concluded') && isCorrect;
+                const dimWrong = (phase === 'revealed' || phase === 'concluded') && !isCorrect;
+                
+                let css = 'p-4 rounded-xl border-2 text-lg font-medium transition-all ';
+                if (highlightCorrect) css += 'bg-green-100 border-green-500 text-green-800 shadow-md scale-105';
+                else if (dimWrong) css += 'bg-gray-50 border-gray-200 text-gray-400 opacity-50';
+                else css += 'bg-blue-50 border-blue-100 text-navy';
+
+                optContainer.innerHTML += `
+                    <div class="${css}">
+                        <span class="font-black text-xl mr-2">${key}.</span> ${q.options[key]}
+                    </div>
+                `;
+            });
+
+            // Conclusion
+            if (phase === 'concluded') {
+                show('t-conclusion-box');
+                getEl('t-conclusion-text').innerText = q.conclusion;
+            } else {
+                hide('t-conclusion-box');
+            }
+
+            // Chart
+            const chartCont = getEl('t-chart-container');
+            chartCont.innerHTML = '';
+            const totalA = currentAnswers.length;
+            ['A', 'B', 'C', 'D'].forEach(key => {
+                const count = currentAnswers.filter(a => a.selectedOption === key).length;
+                const percent = totalA === 0 ? 0 : Math.round((count / totalA) * 100);
+                
+                let barColor = 'bg-gray-400';
+                if (key==='A') barColor = 'bg-blue-500';
+                if (key==='B') barColor = 'bg-teal-500';
+                if (key==='C') barColor = 'bg-orange-500';
+                if (key==='D') barColor = 'bg-purple-500';
+                
+                // If revealed, dim wrong bars
+                if (phase === 'revealed' || phase === 'concluded') {
+                    if (key !== q.correct) barColor = 'bg-gray-300';
+                    else barColor = 'bg-green-500';
+                }
+
+                chartCont.innerHTML += `
+                    <div class="relative">
+                        <div class="flex justify-between mb-1 font-bold text-gray-600 text-sm">
+                            <span>Đáp án ${key}</span>
+                            <span>${percent}% (${count})</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-5 overflow-hidden border border-gray-200">
+                            <div class="${barColor} h-5 rounded-full transition-all duration-1000 ease-out" style="width: ${percent}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Action Buttons
+            const actCont = getEl('t-action-buttons');
+            actCont.innerHTML = '';
+            if (phase === 'answering') {
+                actCont.innerHTML = `<button class="btn btn-danger w-full" onclick="updateSessionPhase('locked')">KẾT THÚC NHẬN BÀI</button>`;
+            } else if (phase === 'locked') {
+                actCont.innerHTML = `<button class="btn btn-orange w-full" onclick="updateSessionPhase('revealed')">CÔNG BỐ ĐÁP ÁN</button>`;
+            } else if (phase === 'revealed') {
+                actCont.innerHTML = `<button class="btn btn-teal w-full" onclick="updateSessionPhase('concluded')">CHỐT KIẾN THỨC</button>`;
+            } else if (phase === 'concluded') {
+                if (qIndex < QUESTIONS.length - 1) {
+                    actCont.innerHTML = `<button class="btn btn-navy bg-navy text-white w-full hover:bg-blue-900" onclick="nextQuestionT()">CÂU TIẾP THEO ➔</button>`;
+                } else {
+                    actCont.innerHTML = `<div class="text-center font-bold text-teal text-xl p-3 bg-teal/10 rounded-xl">ĐÃ HOÀN THÀNH BÀI GIẢNG</div>`;
+                }
+            }
+
+            // Comments
+            const cmtCont = getEl('t-comments-container');
+            cmtCont.innerHTML = '';
+            const comments = currentAnswers.filter(a => a.comment && a.comment.trim() !== '');
+            if (comments.length === 0) {
+                cmtCont.innerHTML = '<p class="text-gray-400 italic col-span-3">Chưa có nhận xét nào từ học sinh.</p>';
+            } else {
+                comments.forEach(a => {
+                    cmtCont.innerHTML += `
+                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm relative">
+                            <div class="absolute -top-3 -left-2 bg-orange text-white text-xs font-bold px-2 py-1 rounded shadow">${a.studentName}</div>
+                            <div class="text-navy font-bold mb-1 mt-1 text-sm">Chọn: ${a.selectedOption}</div>
+                            <p class="text-gray-700 italic">"${a.comment}"</p>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+
+        // --- STUDENT ACTIONS ---
+        window.studentSelectOption = (opt) => {
+            if (currentSession.phase !== 'answering') return;
+            studentSelectedOption = opt;
+            // Update UI selection
+            ['A', 'B', 'C', 'D'].forEach(k => {
+                const el = getEl(`s-opt-${k}`);
+                if (!el) return;
+                if (k === opt) {
+                    el.classList.add('bg-teal', 'text-white', 'border-teal', 'shadow-md');
+                    el.classList.remove('bg-blue-50', 'text-gray-700', 'hover:bg-blue-100');
+                    el.querySelector('.opt-letter').classList.add('text-white');
+                    el.querySelector('.opt-letter').classList.remove('text-navy');
+                } else {
+                    el.classList.remove('bg-teal', 'text-white', 'border-teal', 'shadow-md');
+                    el.classList.add('bg-blue-50', 'text-gray-700', 'hover:bg-blue-100');
+                    el.querySelector('.opt-letter').classList.remove('text-white');
+                    el.querySelector('.opt-letter').classList.add('text-navy');
+                }
+            });
+            
+            const btn = getEl('btn-s-submit');
+            btn.disabled = false;
+            btn.innerText = "GỬI CÂU TRẢ LỜI";
+        };
+
+        window.studentSubmitAnswer = async () => {
+            if (!studentSelectedOption || currentSession.phase !== 'answering') return;
+            
+            const btn = getEl('btn-s-submit');
+            btn.disabled = true;
+            btn.innerText = "Đang gửi...";
+
+            const comment = getEl('s-input-comment').value.trim();
+            const qIndex = currentSession.currentQuestionIndex;
+
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'answers'), {
+                    sessionId: currentSession.id,
+                    questionIndex: qIndex,
+                    studentName: studentName,
+                    selectedOption: studentSelectedOption,
+                    comment: comment,
+                    timestamp: Date.now()
+                });
+            } catch (e) {
+                console.error(e);
+                alert("Lỗi khi gửi, vui lòng thử lại!");
+                btn.disabled = false;
+                btn.innerText = "GỬI LẠI";
+            }
+        };
+
+        // --- RENDER STUDENT UI ---
+        function renderStudentUI() {
+            if (!currentSession) return;
+            const qIndex = currentSession.currentQuestionIndex;
+            const q = QUESTIONS[qIndex];
+            const phase = currentSession.phase;
+
+            const myAnswer = allAnswers.find(a => a.questionIndex === qIndex);
+            const hasAnswered = !!myAnswer;
+
+            // Reset Overlays
+            hide('s-overlay-waiting');
+            hide('s-overlay-recorded');
+            hide('s-overlay-result');
+            hide('s-result-conclusion');
+            hide('s-result-icon-correct');
+            hide('s-result-icon-wrong');
+            hide('s-result-correct-box');
+
+            // Phase logic
+            if (phase === 'answering') {
+                if (hasAnswered) {
+                    show('s-overlay-recorded');
+                    getEl('s-recorded-choice').innerText = myAnswer.selectedOption;
+                } else {
+                    // Show Question UI
+                    getEl('s-q-title').innerText = q.title;
+                    getEl('s-q-text').innerText = q.text;
+                    
+                    const optCont = getEl('s-options-container');
+                    optCont.innerHTML = '';
+                    ['A', 'B', 'C', 'D'].forEach(k => {
+                        optCont.innerHTML += `
+                            <button id="s-opt-${k}" onclick="studentSelectOption('${k}')" class="text-left w-full p-4 rounded-xl border-2 border-blue-100 bg-blue-50 text-gray-700 font-medium text-lg hover:bg-blue-100 transition-colors flex items-center">
+                                <span class="opt-letter font-black text-xl mr-3 text-navy transition-colors">${k}.</span> 
+                                <span>${q.options[k]}</span>
+                            </button>
+                        `;
+                    });
+
+                    // Restore selection visually if re-rendered
+                    if (studentSelectedOption) studentSelectOption(studentSelectedOption);
+                    else {
+                        const btn = getEl('btn-s-submit');
+                        btn.disabled = true;
+                        btn.innerText = "CHỌN ĐÁP ÁN ĐỂ GỬI";
+                    }
+                }
+            } else if (phase === 'locked') {
+                if (hasAnswered) {
+                    show('s-overlay-recorded');
+                    getEl('s-recorded-choice').innerText = myAnswer.selectedOption;
+                } else {
+                    show('s-overlay-waiting');
+                    getEl('s-overlay-waiting').querySelector('h3').innerText = "Hết thời gian!";
+                    getEl('s-overlay-waiting').querySelector('p').innerText = "Giáo viên đã khóa nhận câu trả lời.";
+                }
+            } else if (phase === 'revealed' || phase === 'concluded') {
+                show('s-overlay-result');
+                if (hasAnswered) {
+                    const isCorrect = (myAnswer.selectedOption === q.correct);
+                    if (isCorrect) {
+                        show('s-result-icon-correct');
+                        getEl('s-result-title').innerText = "Tuyệt Vời!";
+                        getEl('s-result-title').className = "text-3xl font-black mb-2 text-green-600";
+                        getEl('s-result-subtitle').innerText = "Em đã chọn chính xác!";
+                    } else {
+                        show('s-result-icon-wrong');
+                        show('s-result-correct-box');
+                        getEl('s-result-title').innerText = "Chưa chính xác";
+                        getEl('s-result-title').className = "text-3xl font-black mb-2 text-red-600";
+                        getEl('s-result-subtitle').innerHTML = `Em đã chọn <span class="font-bold">${myAnswer.selectedOption}</span>`;
+                        getEl('s-result-correct-char').innerText = q.correct;
+                    }
+                } else {
+                    getEl('s-result-title').innerText = "Hết giờ!";
+                    getEl('s-result-subtitle').innerText = "Em chưa kịp gửi câu trả lời.";
+                    show('s-result-correct-box');
+                    getEl('s-result-correct-char').innerText = q.correct;
+                }
+
+                if (phase === 'concluded') {
+                    show('s-result-conclusion');
+                    getEl('s-result-conclusion-text').innerText = q.conclusion;
+                }
+            }
+        }
+
+        // Bootstrap
+        window.addEventListener('DOMContentLoaded', initApp);
+
+    </script>
+</body>
+</html>
